@@ -105,6 +105,21 @@ class EmployeeRecord{
         }
     }
 
+    public static void deleteRecord(int eid){
+        try {
+            Class.forName("org.postgresql.Driver");
+            Connection con = DriverManager.getConnection("jdbc:postgresql://localhost:5432/demodb", "postgres", "tiger");
+
+            PreparedStatement pstmt = con.prepareStatement("DELETE FROM employee WHERE eid = ?");
+
+            pstmt.setInt(1, eid);
+            pstmt.execute();
+
+        } catch (Exception e) {
+            System.out.println(e);
+        }
+    }
+
 
 }
 
@@ -341,6 +356,23 @@ public class EmployManagement {
                 
                 case 5->{
                         //Remove
+                        System.out.print("Enter Id: ");
+                        int empId = scanner.nextInt();
+                        EmployeeRecord.displayRecord(empId);
+
+                        System.out.println("Above are the employee details, are you sure you want to delete? ");
+
+                        System.out.print("Enter Yes/No: ");
+                        scanner.nextLine();
+                        String confirmation = scanner.nextLine();
+
+                        if(confirmation.equalsIgnoreCase("Yes")){
+                            EmployeeRecord.deleteRecord(empId);
+                            System.out.println("Deleted Successfully!!");
+                        }else{
+                            continue;
+                        }
+
                     }
 
                 case 6->{
