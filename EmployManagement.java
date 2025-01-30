@@ -53,14 +53,21 @@ class EmployeeRecord{
         }
     }
 
-    public static void displayRecord(){
+    public static void displayRecord(int empId){
         try {
             Class.forName("org.postgresql.Driver");
             Connection con = DriverManager.getConnection("jdbc:postgresql://localhost:5432/demodb", "postgres", "tiger");
-            PreparedStatement pstmt = con.prepareStatement();
+            String query = "SELECT * FROM employee WHERE eid = ?";
+            PreparedStatement pstmt = con.prepareStatement(query);
 
-            ResultSet rs = stmt.executeQuery("select * from employee ");
-            while(rs.next()){
+            // Set parameter
+            pstmt.setInt(1, empId);
+
+            // Execute the query and get the result set
+            ResultSet rs = pstmt.executeQuery();
+
+    
+            if(rs.next()){
                 System.out.println("EmpID: " +rs.getInt(1));
                 System.out.println("Name: " +rs.getString(2));
                 System.out.println("Age: " +rs.getInt(3));
@@ -70,7 +77,7 @@ class EmployeeRecord{
                 System.out.println();
             }
 
-            stmt.close();
+            pstmt.close();
             con.close();
             
         } catch (Exception e) {
@@ -80,14 +87,18 @@ class EmployeeRecord{
 
 
     //Loophole
-    public static void updateSalary(int id, int  newSalary){
+    public static void updateSalary(int eid, int  newSalary){
         try {
             Class.forName("org.postgresql.Driver");
             Connection con = DriverManager.getConnection("jdbc:postgresql://localhost:5432/demodb", "postgres", "tiger");
-            PreparedStatement pstmt = con.prepareStatement("UPDATE employee SET salary = ? WHERE id = ?");
+            PreparedStatement pstmt = con.prepareStatement("UPDATE employee SET salary = ? WHERE eid = ?");
 
             pstmt.setInt(1, newSalary);
-            pstmt.setInt(2, id);
+            pstmt.setInt(2, eid);
+            pstmt.execute();
+
+            pstmt.close();
+            con.close();            
             
         } catch (Exception e) {
             System.out.println(e);
@@ -306,12 +317,26 @@ public class EmployManagement {
                         //appraisal
                         System.out.print("Enter Id: ");
                         int empId = scanner.nextInt();
+                        EmployeeRecord.displayRecord(empId);
+
+                        System.out.println("Above are the employee details");
+
+                        System.out.print("Enter new salary: ");
+                        int newSalary = scanner.nextInt();
+
+                        EmployeeRecord.updateSalary(empId, newSalary);
+                        System.out.println("Salary Updated Successfully!!");
+                        EmployeeRecord.displayRecord(empId);
 
                         System.out.println("");
                     }   
                     
                 case 4 ->{
                         //search
+                        System.out.print("Enter Id: ");
+                        int empId = scanner.nextInt();
+                        
+                        EmployeeRecord.displayRecord(empId);
                     }
                 
                 case 5->{
