@@ -6,6 +6,12 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.sql.*;
 
+interface EmpDAO {
+
+   public void createRecord();
+   public void displayAllRecords();
+}
+
 class EmployeeRecord{
     public static void createRecord(String name, int age, int salary, String designation, String department ){
         try {
