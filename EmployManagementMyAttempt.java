@@ -4,43 +4,23 @@ import java.util.InputMismatchException;
 import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import javax.sql.rowset.JdbcRowSet;
+import javax.sql.rowset.RowSetProvider;
+
 import java.sql.*;
 
 interface EmpDAO {
 
    public void createRecord();
    public void displayAllRecords();
-   public void displayRecord();
-   public void updateSalary();
-   public void deleteRecord();
 }
 
-class DBConnection{
-
-    private static Connection con = null;
-
-    private DBConnection(){
-
-    }
-
-    public static Connection getConnectionObject(){
-        if(con == null){
-            try {  
-                con = DriverManager.getConnection("jdbc:postgresql://localhost:5432/demodb", "postgres", "tiger");
-            } catch (Exception e) {
-                System.out.println(e);
-            }
-        }
-        return con;
-    }
-
-}
 class EmployeeRecord{
     public static void createRecord(String name, int age, int salary, String designation, String department ){
         try {
             Class.forName("org.postgresql.Driver");
-            //Connection con = DriverManager.getConnection("jdbc:postgresql://localhost:5432/demodb", "postgres", "tiger");
-            Connection con = DBConnection.getConnectionObject();
+            Connection con = DriverManager.getConnection("jdbc:postgresql://localhost:5432/demodb", "postgres", "tiger");
             PreparedStatement pstmt = con.prepareStatement("insert into employee(name, age, salary, designation, department) values(?, ?, ?, ?, ?)");
 
             pstmt.setString(1, name);
@@ -61,17 +41,26 @@ class EmployeeRecord{
     public static void displayAllRecords(){
         try {
             Class.forName("org.postgresql.Driver");
-            Connection con = DBConnection.getConnectionObject();
+            Connection con = DriverManager.getConnection("jdbc:postgresql://localhost:5432/demodb", "postgres", "tiger");
             Statement stmt = con.createStatement();
 
+            JdbcRowSet rowSet = RowSetProvider.newFactory().createJdbcRowSet();
+            rowSet.setUrl("jdbc:postgresql://localhost:5432/demodb");
+            rowSet.setUsername("postgres");
+            rowSet.setPassword("tiger");
+            
+            rowSet.setCommand("select * from employee");
+            rowSet.execute();
+
             ResultSet rs = stmt.executeQuery("select * from employee");
-            while(rs.next()){
-                System.out.println("EmpID: " +rs.getInt(1));
-                System.out.println("Name: " +rs.getString(2));
-                System.out.println("Age: " +rs.getInt(3));
-                System.out.println("Salary: " +rs.getInt(4));
-                System.out.println("Designation: " +rs.getString(5));
-                System.out.println("Department: " +rs.getString(6));
+            while(rowSet.next()){
+
+                System.out.println("EmpID: " +rowSet.getInt(1));
+                System.out.println("Name: " +rowSet.getString(2));
+                System.out.println("Age: " +rowSet.getInt(3));
+                System.out.println("Salary: " +rowSet.getInt(4));
+                System.out.println("Designation: " +rowSet.getString(5));
+                System.out.println("Department: " +rowSet.getString(6));
                 System.out.println();
             }
 
@@ -86,7 +75,7 @@ class EmployeeRecord{
     public static void displayRecord(int empId){
         try {
             Class.forName("org.postgresql.Driver");
-            Connection con = DBConnection.getConnectionObject();
+            Connection con = DriverManager.getConnection("jdbc:postgresql://localhost:5432/demodb", "postgres", "tiger");
             String query = "SELECT * FROM employee WHERE eid = ?";
             PreparedStatement pstmt = con.prepareStatement(query);
 
@@ -115,11 +104,12 @@ class EmployeeRecord{
         }
     }
 
+
     //Loophole
     public static void updateSalary(int eid, int  newSalary){
         try {
             Class.forName("org.postgresql.Driver");
-            Connection con = DBConnection.getConnectionObject();
+            Connection con = DriverManager.getConnection("jdbc:postgresql://localhost:5432/demodb", "postgres", "tiger");
             PreparedStatement pstmt = con.prepareStatement("UPDATE employee SET salary = ? WHERE eid = ?");
 
             pstmt.setInt(1, newSalary);
@@ -137,7 +127,7 @@ class EmployeeRecord{
     public static void deleteRecord(int eid){
         try {
             Class.forName("org.postgresql.Driver");
-            Connection con = DBConnection.getConnectionObject();
+            Connection con = DriverManager.getConnection("jdbc:postgresql://localhost:5432/demodb", "postgres", "tiger");
 
             PreparedStatement pstmt = con.prepareStatement("DELETE FROM employee WHERE eid = ?");
 
@@ -278,7 +268,7 @@ final class Manager extends Employ {
 
 }
 
-public class EmployManagement {
+public class EmployManagementMyAttempt {
 
 
     public static void main(String[] args) {
