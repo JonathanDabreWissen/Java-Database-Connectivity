@@ -321,7 +321,7 @@ final class Manager extends Employ {
 
 }
 
-public class EmployManagementMyAttempt {
+public class EmployManagementWithMongo {
 
 
     public static void main(String[] args) {
