@@ -1,11 +1,23 @@
 // package Assignments;
 import java.util.InputMismatchException;
+import java.util.Map;
 import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.sql.rowset.CachedRowSet;
 import javax.sql.rowset.JdbcRowSet;
 import javax.sql.rowset.RowSetProvider;
+
+import org.bson.Document;
+import org.bson.conversions.Bson;
+
+import com.mongodb.client.FindIterable;
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoClients;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.Filters;
+
 import java.sql.*;
 
 interface EmpDAO {
@@ -18,37 +30,25 @@ class EmployeeRecord{
     
     public static void createRecord(Employ employ ){
 
-        // String name, int age, int salary, String designation, String department 
         try {            
-            CachedRowSet rowSet = RowSetProvider.newFactory().createCachedRowSet();
-            rowSet.setUrl("jdbc:postgresql://localhost:5432/demodb");
-            rowSet.setUsername("postgres");
-            rowSet.setPassword("tiger");
 
-            rowSet.setCommand("select name, age, salary, designation, department from employee");
-            rowSet.execute();
-
-            rowSet.moveToInsertRow();
-
-            rowSet.updateString("name", employ.name);
-            rowSet.updateInt("age", employ.age); 
-            rowSet.updateInt("salary", employ.salary); 
-            rowSet.updateString("designation", employ.designation);
-            rowSet.updateString("department", employ.department);
-
-            rowSet.insertRow();
-
-            rowSet.moveToCurrentRow();
-
-            try(Connection conn = DriverManager.getConnection("jdbc:postgresql://localhost:5432/demodb", "postgres", "tiger")){
-                conn.setAutoCommit(false);
-                rowSet.acceptChanges(conn);
-            }catch(Exception e){
-                System.out.println("Error while commiting: " +e);
-            }
-
-
-            rowSet.close();
+        	MongoClient mongoClient = MongoClients.create("mongodb://localhost:27017");
+    		
+    		MongoDatabase database = mongoClient.getDatabase("demodb");
+    		
+    		MongoCollection<Document> collection = database.getCollection("Employee");
+    		
+    		Document doc = new Document();
+    		doc.append("eid", employ.eid);
+    		doc.append("name", employ.name);
+    		doc.append("age", employ.age);
+    		doc.append("salary", employ.salary);
+    		doc.append("desingation", employ.designation);
+    		doc.append("department", employ.department);
+    		
+    		collection.insertOne(doc);
+    		
+    		mongoClient.close();
 
         } catch (Exception e) {
             System.out.println(e);
@@ -57,66 +57,92 @@ class EmployeeRecord{
 
     public static void displayAllRecords(){
         try {
-            // Class.forName("org.postgresql.Driver");
-            // Connection con = DriverManager.getConnection("jdbc:postgresql://localhost:5432/demodb", "postgres", "tiger");
-            // Statement stmt = con.createStatement();
+        	MongoClient mongoClient = MongoClients.create("mongodb://localhost:27017");
+    		
+    		MongoDatabase database = mongoClient.getDatabase("demodb");
+    		
+    		MongoCollection<Document> collection = database.getCollection("Employee");
 
-            CachedRowSet rowSet = RowSetProvider.newFactory().createCachedRowSet();
-            rowSet.setUrl("jdbc:postgresql://localhost:5432/demodb");
-            rowSet.setUsername("postgres");
-            rowSet.setPassword("tiger");
+            FindIterable<Document> i = collection.find();
             
-            rowSet.setCommand("select * from employee");
-            rowSet.execute();
-
-            // ResultSet rs = stmt.executeQuery("select * from employee");
-            while(rowSet.next()){
-
-                System.out.println("EmpID: " +rowSet.getInt(1));
-                System.out.println("Name: " +rowSet.getString(2));
-                System.out.println("Age: " +rowSet.getInt(3));
-                System.out.println("Salary: " +rowSet.getInt(4));
-                System.out.println("Designation: " +rowSet.getString(5));
-                System.out.println("Department: " +rowSet.getString(6));
-                System.out.println();
+            
+            
+            for(Document d: i) {
+            	//System.out.println(d.toJson());
+            	System.out.println("----------------------------");
+            	
+            	for(Map.Entry<String, Object> entry : d.entrySet()) {
+            		System.out.println(entry.getKey() +": " +entry.getValue());
+            	}
+            	System.out.println("----------------------------");
             }
-
-            rowSet.close();
-            // stmt.close();
-            // con.close();
+            
+            mongoClient.close();
+            
             
         } catch (Exception e) {
             System.out.println(e);
         }
+    }
+    
+    public static boolean checkIfUserExists(int empId) {
+    	
+    	boolean result = false;
+    	try {
+    		MongoClient mongoClient = MongoClients.create("mongodb://localhost:27017");
+    		
+    		MongoDatabase database = mongoClient.getDatabase("demodb");
+    		
+    		MongoCollection<Document> collection = database.getCollection("Employee");
+    		
+    		Bson filter = Filters.eq("eid", empId);
+    		long count = 0;
+    		
+    		count = collection.countDocuments(filter);
+    		
+    		
+    		
+    		if(count>0) {
+    			System.out.println("Employ already exists");
+    			result = true;
+    		}	
+    		
+    		
+    	}
+    	catch(Exception e) {
+    		System.out.println(e);
+    	}
+    	
+    	
+    	return result;
     }
 
     public static void displayRecord(int empId){
         try {
             
 
-            JdbcRowSet rowSet = RowSetProvider.newFactory().createJdbcRowSet();
-            rowSet.setUrl("jdbc:postgresql://localhost:5432/demodb");
-            rowSet.setUsername("postgres");
-            rowSet.setPassword("tiger");
+        	MongoClient mongoClient = MongoClients.create("mongodb://localhost:27017");
+    		
+    		MongoDatabase database = mongoClient.getDatabase("demodb");
+    		
+    		MongoCollection<Document> collection = database.getCollection("Employee");
+    		
+    		Bson filter = Filters.eq("Eid", empId);
+    		
+    		Document document = collection.find(filter).first();
 
-            rowSet.setCommand("select * from employee where eid = ?");
-
-            // Set parameter
-            rowSet.setInt(1, empId);
-            rowSet.execute();
-
-    
-            if(rowSet.next()){
-                System.out.println("EmpID: " +rowSet.getInt(1));
-                System.out.println("Name: " +rowSet.getString(2));
-                System.out.println("Age: " +rowSet.getInt(3));
-                System.out.println("Salary: " +rowSet.getInt(4));
-                System.out.println("Designation: " +rowSet.getString(5));
-                System.out.println("Department: " +rowSet.getString(6));
-                System.out.println();
-            }
-
-            rowSet.close();
+    		if(document != null) {
+    			
+    			System.out.println("----------------------------");
+            	for(Map.Entry<String, Object> entry : document.entrySet()) {
+            		System.out.println(entry.getKey() +": " +entry.getValue());
+            	}
+            	System.out.println("----------------------------");
+    			
+    		}
+    		else {
+    			System.out.println("Employ not found.");
+    		}
             
         } catch (Exception e) {
             System.out.println(e);
@@ -196,7 +222,7 @@ class EmployeeRecord{
 }
 
 abstract class Employ{
-    int empId = 0;
+    int eid;
     String name;
     String designation;
     String department;
@@ -207,7 +233,7 @@ abstract class Employ{
 
     public void display() {
         System.out.println("\nHere are the employ details");
-        System.out.println("Employ ID: " + empId);
+        System.out.println("Employ ID: " + eid);
         System.out.println("Name: " + name);
         System.out.println("Age: " + age);
         System.out.println("Designation: " + designation);
@@ -235,9 +261,10 @@ abstract class Employ{
         return false;
     }
 
-    Employ(String name, int age, String designation, int salary) {
+    Employ(int eid, String name, int age, String designation, int salary) {
         
         employCount++;
+        this.eid = eid;
         this.name = name;
         this.age = age;
         this.designation = designation;
@@ -248,33 +275,33 @@ abstract class Employ{
         System.out.println("\nCreated Employ Successfully");
         System.out.println("Name: " + name);
         System.out.println("Age: " + age);
-        System.out.println("Employ ID: " + empId);
+        System.out.println("Employ ID: " + eid);
         System.out.println("Designation: " + designation);
         System.out.println("Base Salary: " + salary);
         System.out.println();
 
     }
 
-    abstract void raiseSalary(int empId);
+    abstract void raiseSalary(int eid);
 
 }
 
 final class Clerk extends Employ {
 
-    Clerk(String name, int age) {
-        super( name, age, "Clerk", 25000);
+    Clerk(int eid, String name, int age) {
+        super( eid, name, age, "Clerk", 25000);
     }
 
-    Clerk(String name, int age, int salary){
-        super(name, age, "Clerk", salary);
+    Clerk(int eid, String name, int age, int salary){
+        super(eid, name, age, "Clerk", salary);
 
     }
 
     void raiseSalary(int empId) {
-        System.out.println("\nRaised salary of " + this.name + " ,Employ ID: " + this.empId);
+        System.out.println("\nRaised salary of " + this.name + " ,Employ ID: " + this.eid);
 
         this.salary = this.salary + 1000;
-        EmployeeRecord.updateSalary(this.empId, this.salary);
+        EmployeeRecord.updateSalary(this.eid, this.salary);
         System.out.println("Salary now: " + this.salary);
 
     }
@@ -282,18 +309,18 @@ final class Clerk extends Employ {
 
 final class Programmer extends Employ {
 
-    Programmer(String name, int age) {
-        super(name, age, "Programmer", 50000);
+    Programmer(int eid, String name, int age) {
+        super(eid, name, age, "Programmer", 50000);
     }
-    Programmer( String name, int age, int salary){
-        super( name, age, "Programmer", salary);
+    Programmer(int eid, String name, int age, int salary){
+        super( eid, name, age, "Programmer", salary);
     }
 
     void raiseSalary(int empId) {
-        System.out.println("\nRaised salary of " + this.name + " ,Employ ID: " + this.empId);
+        System.out.println("\nRaised salary of " + this.name + " ,Employ ID: " + this.eid);
 
         this.salary = this.salary + 2000;
-        EmployeeRecord.updateSalary(this.empId, this.salary);
+        EmployeeRecord.updateSalary(this.eid, this.salary);
         System.out.println("Salary now: " + this.salary);
 
     }
@@ -302,19 +329,19 @@ final class Programmer extends Employ {
 
 final class Manager extends Employ {
 
-    Manager(String name, int age) {
-        super(name, age, "Manager", 100000);
+    Manager(int eid, String name, int age) {
+        super(eid, name, age, "Manager", 100000);
     }
 
-    Manager(String name, int age, int salary){
-        super(name, age, "Manager", salary);
+    Manager(int eid, String name, int age, int salary){
+        super(eid, name, age, "Manager", salary);
     }
 
     void raiseSalary(int empId) {
-        System.out.println("\nRaised salary of " + this.name + " ,Employ ID: " + this.empId);
+        System.out.println("\nRaised salary of " + this.name + " ,Employ ID: " + this.eid);
 
         this.salary = this.salary + 10000;
-        EmployeeRecord.updateSalary(this.empId, this.salary);
+        EmployeeRecord.updateSalary(this.eid, this.salary);
         System.out.println("Salary now: " + this.salary);
 
     }
@@ -356,7 +383,7 @@ public class EmployManagementWithMongo {
 
 
             switch (choice) {
-                case 1-> {
+                case 1: 
                         // create employ
                         System.out.println("1. Clerk \n2. Programmer \n3. Manager \n4. Others \n5. Exit");
                         System.out.print("Enter your choice of Employ: ");
@@ -368,6 +395,17 @@ public class EmployManagementWithMongo {
                             scanner.nextLine();
                             continue;
                         }
+                        
+                        scanner.nextLine();
+                        
+                        int empId;
+                        
+                        do {
+                        	System.out.print("Enter Id: ");
+                        	empId = scanner.nextInt();
+                        }
+                        while(EmployeeRecord.checkIfUserExists(empId));
+                        
 
                         scanner.nextLine(); 
 
@@ -383,11 +421,11 @@ public class EmployManagementWithMongo {
                         Employ tempEmploy = null;
 
                         if (empChoice == 1) {
-                            tempEmploy = new Clerk(empName, age);
+                            tempEmploy = new Clerk(empId, empName, age);
                         } else if (empChoice == 2) {
-                            tempEmploy = new Programmer(empName, age);
+                            tempEmploy = new Programmer(empId, empName, age);
                         } else if (empChoice == 3) {
-                            tempEmploy = new Manager(empName, age);
+                            tempEmploy = new Manager(empId, empName, age);
                         } else if( empChoice == 4){
                             System.out.println("currently not available.");
                         }
@@ -398,19 +436,18 @@ public class EmployManagementWithMongo {
 
                         EmployeeRecord.createRecord(tempEmploy);
 
-
-
-                    }
+                        break;
                 
-                case 2-> {
+                case 2:
                         //Display
                         EmployeeRecord.displayAllRecords();
-                    }
+                        break;
+                    
 
-                case 3->{
+                case 3:
                         //appraisal
                         System.out.print("Enter Id: ");
-                        int empId = scanner.nextInt();
+                        empId = scanner.nextInt();
                         EmployeeRecord.displayRecord(empId);
 
                         System.out.println("Above are the employee details");
@@ -423,20 +460,23 @@ public class EmployManagementWithMongo {
                         EmployeeRecord.displayRecord(empId);
 
                         System.out.println("");
-                    }   
+                        break;
+                     
                     
-                case 4 ->{
+                case 4:
                         //search
                         System.out.print("Enter Id: ");
-                        int empId = scanner.nextInt();
+                        empId = scanner.nextInt();
                         
                         EmployeeRecord.displayRecord(empId);
-                    }
+                        break;
                 
-                case 5->{
+                    
+                
+                case 5:
                         //Remove
                         System.out.print("Enter Id: ");
-                        int empId = scanner.nextInt();
+                        empId = scanner.nextInt();
                         EmployeeRecord.displayRecord(empId);
 
                         System.out.println("Above are the employee details, are you sure you want to delete? ");
@@ -451,16 +491,17 @@ public class EmployManagementWithMongo {
                         }else{
                             continue;
                         }
+                        break;
 
-                    }
+                  
 
-                case 6->{
+                case 6: 
                         scanner.close();
                         System.out.println("Exiting the code");
-                    }
-                default ->{
+                        break;
+                    
+                default:
                         System.out.println("Check your choice");
-                    }
                     
             }
             
