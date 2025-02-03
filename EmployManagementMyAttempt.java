@@ -14,16 +14,37 @@ interface EmpDAO {
    public void displayAllRecords();
 }
 
+class RowSetConnection{
+    private static CachedRowSet rowSet = null;
+
+    private RowSetConnection() {
+        try {
+            rowSet = RowSetProvider.newFactory().createCachedRowSet();
+            rowSet.setUrl("jdbc:postgresql://localhost:5432/demodb");
+            rowSet.setUsername("postgres");
+            rowSet.setPassword("tiger");
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static CachedRowSet getRowSetConnection(){
+
+        if(rowSet == null){
+            new RowSetConnection();
+        }
+        
+        return rowSet;
+    }
+}
 class EmployeeRecord{
     
     public static void createRecord(Employ employ ){
 
         // String name, int age, int salary, String designation, String department 
         try {            
-            CachedRowSet rowSet = RowSetProvider.newFactory().createCachedRowSet();
-            rowSet.setUrl("jdbc:postgresql://localhost:5432/demodb");
-            rowSet.setUsername("postgres");
-            rowSet.setPassword("tiger");
+
+            CachedRowSet rowSet = RowSetConnection.getRowSetConnection();
 
             rowSet.setCommand("select name, age, salary, designation, department from employee");
             rowSet.execute();
@@ -57,19 +78,12 @@ class EmployeeRecord{
 
     public static void displayAllRecords(){
         try {
-            // Class.forName("org.postgresql.Driver");
-            // Connection con = DriverManager.getConnection("jdbc:postgresql://localhost:5432/demodb", "postgres", "tiger");
-            // Statement stmt = con.createStatement();
-
-            CachedRowSet rowSet = RowSetProvider.newFactory().createCachedRowSet();
-            rowSet.setUrl("jdbc:postgresql://localhost:5432/demodb");
-            rowSet.setUsername("postgres");
-            rowSet.setPassword("tiger");
+            CachedRowSet rowSet = RowSetConnection.getRowSetConnection();
             
             rowSet.setCommand("select * from employee");
             rowSet.execute();
 
-            // ResultSet rs = stmt.executeQuery("select * from employee");
+            
             while(rowSet.next()){
 
                 System.out.println("EmpID: " +rowSet.getInt(1));
@@ -82,8 +96,6 @@ class EmployeeRecord{
             }
 
             rowSet.close();
-            // stmt.close();
-            // con.close();
             
         } catch (Exception e) {
             System.out.println(e);
@@ -93,11 +105,7 @@ class EmployeeRecord{
     public static void displayRecord(int empId){
         try {
             
-
-            JdbcRowSet rowSet = RowSetProvider.newFactory().createJdbcRowSet();
-            rowSet.setUrl("jdbc:postgresql://localhost:5432/demodb");
-            rowSet.setUsername("postgres");
-            rowSet.setPassword("tiger");
+            CachedRowSet rowSet = RowSetConnection.getRowSetConnection();
 
             rowSet.setCommand("select * from employee where eid = ?");
 
@@ -127,10 +135,7 @@ class EmployeeRecord{
     public static void updateSalary(int eid, int  newSalary){
         try {
 
-            CachedRowSet rowSet = RowSetProvider.newFactory().createCachedRowSet();
-            rowSet.setUrl("jdbc:postgresql://localhost:5432/demodb");
-            rowSet.setUsername("postgres");
-            rowSet.setPassword("tiger");
+            CachedRowSet rowSet = RowSetConnection.getRowSetConnection();
 
             rowSet.setCommand("SELECT eid, name, salary FROM employee WHERE eid = ? ");
             rowSet.setInt(1, eid);
@@ -160,10 +165,7 @@ class EmployeeRecord{
     public static void deleteRecord(int eid){
         try {
 
-            CachedRowSet rowSet = RowSetProvider.newFactory().createCachedRowSet();
-            rowSet.setUrl("jdbc:postgresql://localhost:5432/demodb");
-            rowSet.setUsername("postgres");
-            rowSet.setPassword("tiger");
+            CachedRowSet rowSet = RowSetConnection.getRowSetConnection();
 
             rowSet.setCommand("SELECT eid, name, salary FROM employee WHERE eid = ? ");
             
@@ -191,7 +193,6 @@ class EmployeeRecord{
             System.out.println(e);
         }
     }
-
 
 }
 
