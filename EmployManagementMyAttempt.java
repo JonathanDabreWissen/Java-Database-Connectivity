@@ -22,6 +22,7 @@ class EmployeeRecord{
             Class.forName("org.postgresql.Driver");
             Connection con = DriverManager.getConnection("jdbc:postgresql://localhost:5432/demodb", "postgres", "tiger");
             PreparedStatement pstmt = con.prepareStatement("insert into employee(name, age, salary, designation, department) values(?, ?, ?, ?, ?)");
+            
 
             pstmt.setString(1, name);
             pstmt.setInt(2, age);
@@ -40,9 +41,9 @@ class EmployeeRecord{
 
     public static void displayAllRecords(){
         try {
-            Class.forName("org.postgresql.Driver");
-            Connection con = DriverManager.getConnection("jdbc:postgresql://localhost:5432/demodb", "postgres", "tiger");
-            Statement stmt = con.createStatement();
+            // Class.forName("org.postgresql.Driver");
+            // Connection con = DriverManager.getConnection("jdbc:postgresql://localhost:5432/demodb", "postgres", "tiger");
+            // Statement stmt = con.createStatement();
 
             JdbcRowSet rowSet = RowSetProvider.newFactory().createJdbcRowSet();
             rowSet.setUrl("jdbc:postgresql://localhost:5432/demodb");
@@ -52,7 +53,7 @@ class EmployeeRecord{
             rowSet.setCommand("select * from employee");
             rowSet.execute();
 
-            ResultSet rs = stmt.executeQuery("select * from employee");
+            // ResultSet rs = stmt.executeQuery("select * from employee");
             while(rowSet.next()){
 
                 System.out.println("EmpID: " +rowSet.getInt(1));
@@ -64,8 +65,9 @@ class EmployeeRecord{
                 System.out.println();
             }
 
-            stmt.close();
-            con.close();
+            rowSet.close();
+            // stmt.close();
+            // con.close();
             
         } catch (Exception e) {
             System.out.println(e);
@@ -74,30 +76,40 @@ class EmployeeRecord{
 
     public static void displayRecord(int empId){
         try {
-            Class.forName("org.postgresql.Driver");
-            Connection con = DriverManager.getConnection("jdbc:postgresql://localhost:5432/demodb", "postgres", "tiger");
-            String query = "SELECT * FROM employee WHERE eid = ?";
-            PreparedStatement pstmt = con.prepareStatement(query);
+            // Class.forName("org.postgresql.Driver");
+            // Connection con = DriverManager.getConnection("jdbc:postgresql://localhost:5432/demodb", "postgres", "tiger");
+            // String query = "SELECT * FROM employee WHERE eid = ?";
+            // PreparedStatement pstmt = con.prepareStatement(query);
+
+            JdbcRowSet rowSet = RowSetProvider.newFactory().createJdbcRowSet();
+            rowSet.setUrl("jdbc:postgresql://localhost:5432/demodb");
+            rowSet.setUsername("postgres");
+            rowSet.setPassword("tiger");
+
+            rowSet.setCommand("select * from employee where id = ?");
 
             // Set parameter
-            pstmt.setInt(1, empId);
+            rowSet.setInt(1, empId);
+            // pstmt.setInt(1, empId);
 
             // Execute the query and get the result set
-            ResultSet rs = pstmt.executeQuery();
+            // ResultSet rs = pstmt.executeQuery();
+            rowSet.execute();
 
     
-            if(rs.next()){
-                System.out.println("EmpID: " +rs.getInt(1));
-                System.out.println("Name: " +rs.getString(2));
-                System.out.println("Age: " +rs.getInt(3));
-                System.out.println("Salary: " +rs.getInt(4));
-                System.out.println("Designation: " +rs.getString(5));
-                System.out.println("Department: " +rs.getString(6));
+            if(rowSet.next()){
+                System.out.println("EmpID: " +rowSet.getInt(1));
+                System.out.println("Name: " +rowSet.getString(2));
+                System.out.println("Age: " +rowSet.getInt(3));
+                System.out.println("Salary: " +rowSet.getInt(4));
+                System.out.println("Designation: " +rowSet.getString(5));
+                System.out.println("Department: " +rowSet.getString(6));
                 System.out.println();
             }
 
-            pstmt.close();
-            con.close();
+            // pstmt.close();
+            // con.close();
+            rowSet.close();
             
         } catch (Exception e) {
             System.out.println(e);
