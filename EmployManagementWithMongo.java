@@ -5,7 +5,6 @@ import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.sql.rowset.CachedRowSet;
-import javax.sql.rowset.JdbcRowSet;
 import javax.sql.rowset.RowSetProvider;
 
 import org.bson.Document;
@@ -17,6 +16,7 @@ import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.Updates;
 
 import java.sql.*;
 
@@ -107,7 +107,7 @@ class EmployeeRecord{
     			result = true;
     		}	
     		
-    		
+    		mongoClient.close();
     	}
     	catch(Exception e) {
     		System.out.println(e);
@@ -127,7 +127,7 @@ class EmployeeRecord{
     		
     		MongoCollection<Document> collection = database.getCollection("Employee");
     		
-    		Bson filter = Filters.eq("Eid", empId);
+    		Bson filter = Filters.eq("eid", empId);
     		
     		Document document = collection.find(filter).first();
 
@@ -143,6 +143,7 @@ class EmployeeRecord{
     		else {
     			System.out.println("Employ not found.");
     		}
+    		mongoClient.close();
             
         } catch (Exception e) {
             System.out.println(e);
@@ -153,30 +154,25 @@ class EmployeeRecord{
     public static void updateSalary(int eid, int  newSalary){
         try {
 
-            CachedRowSet rowSet = RowSetProvider.newFactory().createCachedRowSet();
-            rowSet.setUrl("jdbc:postgresql://localhost:5432/demodb");
-            rowSet.setUsername("postgres");
-            rowSet.setPassword("tiger");
+        	MongoClient mongoClient = MongoClients.create("mongodb://localhost:27017");
+    		
+    		MongoDatabase database = mongoClient.getDatabase("demodb");
+    		
+    		MongoCollection<Document> collection = database.getCollection("Employee");
+    		
+    		Bson filter = Filters.eq("eid", eid);
+    		Bson update = Updates.set("salary", newSalary);
+    		
+    		Document document = collection.find(filter).first();
 
-            rowSet.setCommand("SELECT eid, name, salary FROM employee WHERE eid = ? ");
-            rowSet.setInt(1, eid);
-            rowSet.execute();
-
-            if(rowSet.next()){
-                rowSet.updateInt("salary", newSalary);
-                rowSet.updateRow();
-
-                try(Connection conn = DriverManager.getConnection("jdbc:postgresql://localhost:5432/demodb", "postgres", "tiger")){
-                    conn.setAutoCommit(false);
-                    rowSet.acceptChanges(conn);
-                }catch(Exception e){
-                    System.out.println("Error while commiting: " +e);
-                }
+            if(document != null){
+               collection.updateOne(filter, update);
             }
             else{
                 System.out.println("Employee not found");
             }
-            rowSet.close();       
+            
+            mongoClient.close();
             
         } catch (Exception e) {
             System.out.println(e);
@@ -186,29 +182,20 @@ class EmployeeRecord{
     public static void deleteRecord(int eid){
         try {
 
-            CachedRowSet rowSet = RowSetProvider.newFactory().createCachedRowSet();
-            rowSet.setUrl("jdbc:postgresql://localhost:5432/demodb");
-            rowSet.setUsername("postgres");
-            rowSet.setPassword("tiger");
-
-            rowSet.setCommand("SELECT eid, name, salary FROM employee WHERE eid = ? ");
-            
-            rowSet.setInt(1, eid);
-
-            rowSet.execute();
-
-            if(rowSet.next()){
-                rowSet.deleteRow();
-                System.out.println("Record marked for deletion...");
-
-
-                try(Connection conn = DriverManager.getConnection("jdbc:postgresql://localhost:5432/demodb", "postgres", "tiger")){
-                    conn.setAutoCommit(false);
-                    rowSet.acceptChanges(conn);
-                }catch(Exception e){
-                    System.out.println("Error while commiting: " +e);
-                }
-            }
+        	MongoClient mongoClient = MongoClients.create("mongodb://localhost:27017");
+    		
+    		MongoDatabase database = mongoClient.getDatabase("demodb");
+    		
+    		MongoCollection<Document> collection = database.getCollection("Employee");
+    		
+    		Bson filter = Filters.eq("eid", eid);
+    		
+    		Document document = collection.find(filter).first();
+    		
+    		if(document != null) {
+    			System.out.println("Deleting the record...");
+    			collection.deleteOne(filter);
+    		}
             else{
                 System.out.println("Employ not found.");
             }     
