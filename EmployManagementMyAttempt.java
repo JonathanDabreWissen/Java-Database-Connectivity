@@ -5,6 +5,7 @@ import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.sql.rowset.CachedRowSet;
 import javax.sql.rowset.JdbcRowSet;
 import javax.sql.rowset.RowSetProvider;
 
@@ -17,22 +18,40 @@ interface EmpDAO {
 }
 
 class EmployeeRecord{
-    public static void createRecord(String name, int age, int salary, String designation, String department ){
-        try {
-            Class.forName("org.postgresql.Driver");
-            Connection con = DriverManager.getConnection("jdbc:postgresql://localhost:5432/demodb", "postgres", "tiger");
-            PreparedStatement pstmt = con.prepareStatement("insert into employee(name, age, salary, designation, department) values(?, ?, ?, ?, ?)");
-            
+    
+    public static void createRecord(Employ employ ){
 
-            pstmt.setString(1, name);
-            pstmt.setInt(2, age);
-            pstmt.setInt(3, salary);
-            pstmt.setString(4, designation);
-            pstmt.setString(5, department);
-            pstmt.execute();
+        // String name, int age, int salary, String designation, String department 
+        try {            
+            CachedRowSet rowSet = RowSetProvider.newFactory().createCachedRowSet();
+            rowSet.setUrl("jdbc:postgresql://localhost:5432/demodb");
+            rowSet.setUsername("postgres");
+            rowSet.setPassword("tiger");
 
-            pstmt.close();
-            con.close();
+            rowSet.setCommand("select name, age, salary, designation, department from employee");
+            rowSet.execute();
+
+            rowSet.moveToInsertRow();
+
+            rowSet.updateString("name", employ.name);
+            rowSet.updateInt("age", employ.age); 
+            rowSet.updateInt("salary", employ.salary); 
+            rowSet.updateString("designation", employ.designation);
+            rowSet.updateString("department", employ.department);
+
+            rowSet.insertRow();
+
+            rowSet.moveToCurrentRow();
+
+            try(Connection conn = DriverManager.getConnection("jdbc:postgresql://localhost:5432/demodb", "postgres", "tiger")){
+                conn.setAutoCommit(false);
+                rowSet.acceptChanges(conn);
+            }catch(Exception e){
+                System.out.println("Error while commiting: " +e);
+            }
+
+
+            rowSet.close();
 
         } catch (Exception e) {
             System.out.println(e);
@@ -45,7 +64,7 @@ class EmployeeRecord{
             // Connection con = DriverManager.getConnection("jdbc:postgresql://localhost:5432/demodb", "postgres", "tiger");
             // Statement stmt = con.createStatement();
 
-            JdbcRowSet rowSet = RowSetProvider.newFactory().createJdbcRowSet();
+            CachedRowSet rowSet = RowSetProvider.newFactory().createCachedRowSet();
             rowSet.setUrl("jdbc:postgresql://localhost:5432/demodb");
             rowSet.setUsername("postgres");
             rowSet.setPassword("tiger");
@@ -203,7 +222,7 @@ abstract class Employ{
         this.salary = salary;
         this.department = "IT";
 
-        EmployeeRecord.createRecord(name, age, salary, designation, "IT");
+        // EmployeeRecord.createRecord(name, age, salary, designation, "IT");
         System.out.println("\nCreated Employ Successfully");
         System.out.println("Name: " + name);
         System.out.println("Age: " + age);
@@ -339,18 +358,25 @@ public class EmployManagementMyAttempt {
                         System.out.print("Enter age: ");
                         age = scanner.nextInt();
 
+                        Employ tempEmploy = null;
+
                         if (empChoice == 1) {
-                            new Clerk(empName, age);
+                            tempEmploy = new Clerk(empName, age);
                         } else if (empChoice == 2) {
-                            new Programmer(empName, age);
+                            tempEmploy = new Programmer(empName, age);
                         } else if (empChoice == 3) {
-                            new Manager(empName, age);
+                            tempEmploy = new Manager(empName, age);
                         } else if( empChoice == 4){
                             System.out.println("currently not available.");
                         }
                         else {
                             System.out.println("Check your choice.");
+                            continue;
                         }
+
+                        EmployeeRecord.createRecord(tempEmploy);
+
+
 
                     }
                 
