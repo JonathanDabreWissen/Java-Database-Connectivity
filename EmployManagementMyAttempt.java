@@ -95,24 +95,17 @@ class EmployeeRecord{
 
     public static void displayRecord(int empId){
         try {
-            // Class.forName("org.postgresql.Driver");
-            // Connection con = DriverManager.getConnection("jdbc:postgresql://localhost:5432/demodb", "postgres", "tiger");
-            // String query = "SELECT * FROM employee WHERE eid = ?";
-            // PreparedStatement pstmt = con.prepareStatement(query);
+            
 
             JdbcRowSet rowSet = RowSetProvider.newFactory().createJdbcRowSet();
             rowSet.setUrl("jdbc:postgresql://localhost:5432/demodb");
             rowSet.setUsername("postgres");
             rowSet.setPassword("tiger");
 
-            rowSet.setCommand("select * from employee where id = ?");
+            rowSet.setCommand("select * from employee where eid = ?");
 
             // Set parameter
             rowSet.setInt(1, empId);
-            // pstmt.setInt(1, empId);
-
-            // Execute the query and get the result set
-            // ResultSet rs = pstmt.executeQuery();
             rowSet.execute();
 
     
@@ -126,8 +119,6 @@ class EmployeeRecord{
                 System.out.println();
             }
 
-            // pstmt.close();
-            // con.close();
             rowSet.close();
             
         } catch (Exception e) {
@@ -139,16 +130,31 @@ class EmployeeRecord{
     //Loophole
     public static void updateSalary(int eid, int  newSalary){
         try {
-            Class.forName("org.postgresql.Driver");
-            Connection con = DriverManager.getConnection("jdbc:postgresql://localhost:5432/demodb", "postgres", "tiger");
-            PreparedStatement pstmt = con.prepareStatement("UPDATE employee SET salary = ? WHERE eid = ?");
 
-            pstmt.setInt(1, newSalary);
-            pstmt.setInt(2, eid);
-            pstmt.execute();
+            CachedRowSet rowSet = RowSetProvider.newFactory().createCachedRowSet();
+            rowSet.setUrl("jdbc:postgresql://localhost:5432/demodb");
+            rowSet.setUsername("postgres");
+            rowSet.setPassword("tiger");
 
-            pstmt.close();
-            con.close();            
+            rowSet.setCommand("SELECT eid, name, salary FROM employee WHERE eid = ? ");
+            rowSet.setInt(1, eid);
+            rowSet.execute();
+
+            if(rowSet.next()){
+                rowSet.updateInt("salary", newSalary);
+                rowSet.updateRow();
+
+                try(Connection conn = DriverManager.getConnection("jdbc:postgresql://localhost:5432/demodb", "postgres", "tiger")){
+                    conn.setAutoCommit(false);
+                    rowSet.acceptChanges(conn);
+                }catch(Exception e){
+                    System.out.println("Error while commiting: " +e);
+                }
+            }
+            else{
+                System.out.println("Employee not found");
+            }
+            rowSet.close();       
             
         } catch (Exception e) {
             System.out.println(e);
@@ -157,13 +163,33 @@ class EmployeeRecord{
 
     public static void deleteRecord(int eid){
         try {
-            Class.forName("org.postgresql.Driver");
-            Connection con = DriverManager.getConnection("jdbc:postgresql://localhost:5432/demodb", "postgres", "tiger");
 
-            PreparedStatement pstmt = con.prepareStatement("DELETE FROM employee WHERE eid = ?");
+            CachedRowSet rowSet = RowSetProvider.newFactory().createCachedRowSet();
+            rowSet.setUrl("jdbc:postgresql://localhost:5432/demodb");
+            rowSet.setUsername("postgres");
+            rowSet.setPassword("tiger");
 
-            pstmt.setInt(1, eid);
-            pstmt.execute();
+            rowSet.setCommand("SELECT eid, name, salary FROM employee WHERE eid = ? ");
+            
+            rowSet.setInt(1, eid);
+
+            rowSet.execute();
+
+            if(rowSet.next()){
+                rowSet.deleteRow();
+                System.out.println("Record marked for deletion...");
+
+
+                try(Connection conn = DriverManager.getConnection("jdbc:postgresql://localhost:5432/demodb", "postgres", "tiger")){
+                    conn.setAutoCommit(false);
+                    rowSet.acceptChanges(conn);
+                }catch(Exception e){
+                    System.out.println("Error while commiting: " +e);
+                }
+            }
+            else{
+                System.out.println("Employ not found.");
+            }     
 
         } catch (Exception e) {
             System.out.println(e);
