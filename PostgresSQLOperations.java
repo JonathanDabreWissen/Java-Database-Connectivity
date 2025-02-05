@@ -89,6 +89,28 @@ class SalesRecord{
 		}
 		
 	}
+	
+	public static void updateJsonData() {
+		
+	}
+	
+	public static void deleteRecord(String ProductName) {
+		Connection conn = JDBCConnection.getConnection();
+		PreparedStatement statement = null;
+		try {
+			String deleteQuery = "DELETE FROM sales WHERE product = ?";
+            statement = conn.prepareStatement(deleteQuery);
+            statement.setString(1, ProductName);
+            
+            
+            int rowsDeleted = statement.executeUpdate();
+            System.out.println(rowsDeleted + " record(s) deleted successfully");
+			
+			
+		}catch(Exception e) {
+			System.out.println(e);
+		}
+	}
 }
 
 public class PostgreSQLOperations {
@@ -97,6 +119,10 @@ public class PostgreSQLOperations {
     	
 //    	SalesRecord.createRecord("iPhone 16", "March", 1000000, "Phone", 10, "Mumbai");
 //    	SalesRecord.createRecord("S25 Ultra", "February", 1000000, "Phone", 10, "Mumbai");
+//    	SalesRecord.createRecord("Pixel 9", "May", 1000000, "Phone", 10, "Mumbai");
+    	
+    	SalesRecord.displayRecords();
+    	SalesRecord.deleteRecord("Pixel 9");
     	SalesRecord.displayRecords();
     	
         
