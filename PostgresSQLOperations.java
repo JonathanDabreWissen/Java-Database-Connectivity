@@ -90,7 +90,33 @@ class SalesRecord{
 		
 	}
 	
-	public static void updateJsonData() {
+	public static void updateJsonData(String product, String category, int quantity, String location) {
+		
+		Connection conn = JDBCConnection.getConnection();
+		PreparedStatement statement = null;
+		
+		
+		try {
+			
+            String updateQuery = "UPDATE sales SET sales_data = ?::jsonb WHERE product = ?";
+            statement = conn.prepareStatement(updateQuery);
+            
+            JSONObject updatedJson = new JSONObject();
+            updatedJson.put("category", category); 
+			updatedJson.put("quantity", quantity);
+			updatedJson.put("location", location);
+			
+			statement.setString(1, updatedJson.toString()); // Set new JSON
+	        statement.setString(2, product);
+	        
+	        
+	        int rowsAffected = statement.executeUpdate();
+            System.out.println(rowsAffected + " record(s) updated successfully");
+			
+		}
+		catch(Exception e) {
+			System.out.println(e);
+		}
 		
 	}
 	
@@ -120,9 +146,11 @@ public class PostgreSQLOperations {
 //    	SalesRecord.createRecord("iPhone 16", "March", 1000000, "Phone", 10, "Mumbai");
 //    	SalesRecord.createRecord("S25 Ultra", "February", 1000000, "Phone", 10, "Mumbai");
 //    	SalesRecord.createRecord("Pixel 9", "May", 1000000, "Phone", 10, "Mumbai");
+//    	SalesRecord.deleteRecord("Pixel 9");
     	
+//    	SalesRecord.displayRecords();
     	SalesRecord.displayRecords();
-    	SalesRecord.deleteRecord("Pixel 9");
+    	//SalesRecord.updateJsonData("S25 Ultra", "Smart Phone", 10, "Mumbai");
     	SalesRecord.displayRecords();
     	
         
